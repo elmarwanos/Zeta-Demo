@@ -248,9 +248,8 @@ section, header, footer { scroll-margin-top: var(--nav-h); }
 .pillar__body p { color: var(--ink-2); font-size: 16.5px; max-width: 52ch; }
 .pillar__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .pillar__tags li { font-size: 13.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--bg); }
-.pillar__link { margin-top: 8px; font-weight: 500; font-size: 15px; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
-.pillar__link::after { content: ''; width: 18px; height: 1.5px; background: currentColor; transition: width 0.3s var(--ease); }
-.pillar:hover .pillar__link::after { width: 30px; background: var(--red); }
+.pillar__link { margin-top: 8px; font-weight: 500; font-size: 15px; color: var(--ink); transition: color 0.25s; }
+.pillar:hover .pillar__link { color: var(--red); }
 
 /* ==========================================================================
    Sovereign stack scroll story
