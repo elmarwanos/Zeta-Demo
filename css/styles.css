@@ -144,11 +144,17 @@ section, header, footer { scroll-margin-top: var(--nav-h); }
 .nav__toggle[aria-expanded="true"] span:last-child { transform: translateY(-4px) rotate(-45deg); }
 .nav__mobile { display: none; }
 
-/* Theme switch: a small track with a knob; the knob shows a filled sun/moon dot. */
+/* Theme switch: a pill with a sun on the left and a moon on the right. The knob sits under the
+   icon of the current theme and that icon is drawn in the knob's contrast colour. */
 .theme-switch { padding: 6px; border-radius: 999px; }
-.theme-switch__track { display: block; width: 42px; height: 24px; border-radius: 999px; border: 1.5px solid var(--line-strong); position: relative; transition: background-color 0.3s; }
-.theme-switch__knob { position: absolute; top: 3px; left: 3px; width: 15px; height: 15px; border-radius: 50%; background: var(--ink); transition: transform 0.3s var(--ease), background-color 0.3s; }
-:root[data-theme="dark"] .theme-switch__knob { transform: translateX(18px); background: var(--red); }
+.theme-switch__track { display: block; width: 54px; height: 28px; border-radius: 999px; border: 1.5px solid var(--line-strong); position: relative; }
+.theme-switch__knob { position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); transition: transform 0.3s var(--ease), background-color 0.3s; }
+.theme-switch__sun, .theme-switch__moon { position: absolute; top: 6px; width: 13px; height: 13px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; transition: stroke 0.3s, opacity 0.3s; z-index: 1; }
+.theme-switch__sun { left: 6px; stroke: var(--bg); opacity: 1; }
+.theme-switch__moon { right: 6px; }
+:root[data-theme="dark"] .theme-switch__knob { transform: translateX(26px); background: var(--red); }
+:root[data-theme="dark"] .theme-switch__sun { stroke: var(--ink); opacity: 0.55; }
+:root[data-theme="dark"] .theme-switch__moon { stroke: #fff; opacity: 1; }
 .theme-switch:hover .theme-switch__track { border-color: var(--ink); }
 
 /* ==========================================================================
@@ -209,7 +215,8 @@ section, header, footer { scroll-margin-top: var(--nav-h); }
    Pillars: staggered cards that fly in from alternate sides
    ========================================================================== */
 .section--solutions { position: relative; isolation: isolate; overflow: clip; }
-.zbg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+.zbg-wrap { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.zbg { display: block; width: 100%; height: 100%; }
 .zbg .zl { fill: none; stroke: var(--ink); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .zbg .zl--0 { opacity: 0.14; } .zbg .zl--1 { opacity: 0.11; } .zbg .zl--2 { opacity: 0.085; } .zbg .zl--3 { opacity: 0.06; }
 .zbg .zp { fill: none; stroke: var(--red); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.55; }
@@ -419,6 +426,9 @@ address a { color: var(--ink); font-weight: 500; width: fit-content; border-bott
   .stats { gap: 18px 36px; padding: 8px 0 32px; }
   .section__head { grid-template-columns: 1fr; align-items: start; }
   .pillar:nth-child(odd), .pillar:nth-child(even) { grid-column: 1 / -1; }
+  /* One Z at true proportions, pinned to the viewport while the cards scroll past it. */
+  .zbg { position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h)); }
+  .layer.is-active, .layer:hover:not(.is-active) { transform: none; }
   .stackstory { grid-template-columns: 1fr; gap: 24px; }
   .stackstory__sticky { position: relative; top: 0; }
   .stackitem { min-height: 0; padding: 32px 0; }

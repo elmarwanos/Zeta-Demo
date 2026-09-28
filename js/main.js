@@ -229,7 +229,12 @@
 
   (function solutionsZ() {
     var svg = document.getElementById('zbg');
-    if (svg) buildZ(svg, { drawOnView: document.getElementById('solutions'), drawSeconds: 2.4, speed: 110 });
+    if (!svg) return;
+    // Wide screens stretch the Z over the whole section; narrow ones keep its proportions and pin it.
+    var mq = window.matchMedia('(max-width: 1100px)');
+    function fit() { svg.setAttribute('preserveAspectRatio', mq.matches ? 'xMidYMid meet' : 'none'); }
+    fit(); mq.addEventListener ? mq.addEventListener('change', fit) : mq.addListener(fit);
+    buildZ(svg, { drawOnView: document.getElementById('solutions'), drawSeconds: 2.4, speed: 110 });
   })();
 
   /* ========================================================================

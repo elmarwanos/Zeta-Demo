@@ -44,7 +44,11 @@
   <div class="nav__actions">
     <a href="#careers" class="nav__text">Careers</a>
     <button class="theme-switch" id="themeSwitch" type="button" aria-label="Switch to dark theme" title="Switch theme">
-      <span class="theme-switch__track"><span class="theme-switch__knob"></span></span>
+      <span class="theme-switch__track">
+        <svg class="theme-switch__sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>
+        <svg class="theme-switch__moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <span class="theme-switch__knob"></span>
+      </span>
     </button>
     <a href="#contact" class="btn btn--primary">Contact us</a>
     <button class="nav__toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navMobile">
@@ -115,7 +119,7 @@
 <section id="solutions" class="section section--solutions">
   <!-- One Z through the whole section, same builder as the hero. Stretched to the section box;
        strokes stay uniform via vector-effect. -->
-  <svg class="zbg" id="zbg" viewBox="0 0 640 640" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div class="zbg-wrap" aria-hidden="true"><svg class="zbg" id="zbg" viewBox="0 0 640 640" preserveAspectRatio="none"></svg></div>
   <div class="container">
     <div class="section__head">
       <h2 class="h2">Six businesses.<br>One operator.</h2>
