@@ -92,7 +92,7 @@
   /* ========================================================================
      The Z drawn as concentric route lines
 
-     One Z polyline, offset into four parallel stripes. Corners are filleted with arcs that share
+     One Z polyline, offset into four parallel stripes, plus the logo's "t" crossbar. Corners are filleted with arcs that share
      one centre per corner, so the stripes nest the way the logo's loops do: the stripe that is
      innermost at the top corner is outermost at the bottom one, like a folded ribbon.
      Used twice: the hero (interactive, draws on load) and the solutions section background
@@ -140,21 +140,50 @@
       return out;
     }
 
+    /* The "t" of the logo. As in the mark, the crossbar grows out of the third stripe (T_FROM),
+       cuts through the stripes outside it, and ends in a hairpin loop with a stub inside it.
+       The outer stripes are masked in one band around the crossbar, so it reads as passing over them. */
+    var T_FROM = 2, T_CY = 300, T_R = SPACING;
+    function crossbarLines() {
+      var sg = segs[1], A = add(sg.a, mul(sg.n, offsets[T_FROM]));
+      function xAt(y) { return A[0] + (y - A[1]) / sg.u[1] * sg.u[0]; }
+      var cx = xAt(T_CY - T_R) + 2 * SPACING + 20;
+      return {
+        cx: cx,
+        loop: 'M' + xAt(T_CY - T_R).toFixed(1) + ' ' + (T_CY - T_R) + ' L' + cx.toFixed(1) + ' ' + (T_CY - T_R) +
+          ' A' + T_R + ' ' + T_R + ' 0 0 1 ' + cx.toFixed(1) + ' ' + (T_CY + T_R) + ' L' + xAt(T_CY + T_R).toFixed(1) + ' ' + (T_CY + T_R),
+        stub: 'M' + xAt(T_CY).toFixed(1) + ' ' + T_CY + ' L' + cx.toFixed(1) + ' ' + T_CY
+      };
+    }
+    var t = crossbarLines();
+
+    var maskId = svg.id + '-tcut';
+    var defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = '<mask id="' + maskId + '" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1040" height="1040">' +
+      '<rect x="-200" y="-200" width="1040" height="1040" fill="#fff"/>' +
+      '<path d="' + t.stub + '" fill="none" stroke="#000" stroke-width="' + (2 * T_R + 30) + '" stroke-linecap="round"/></mask>';
+    svg.appendChild(defs);
+    var cut = document.createElementNS(NS, 'g');
+    cut.setAttribute('mask', 'url(#' + maskId + ')');
+    svg.appendChild(cut);
+
     var stripes = [], packets = [];
-    offsets.forEach(function (d, i) {
-      var dAttr = stripePath(d);
+    offsets.map(stripePath).concat([t.loop, t.stub]).forEach(function (dAttr, i) {
+      // Stripes outside the crossbar's source stripe get the crossing gaps.
+      var host = i < T_FROM ? cut : svg;
       var base = document.createElementNS(NS, 'path');
       base.setAttribute('d', dAttr);
       base.setAttribute('class', 'zl zl--' + i);
-      svg.appendChild(base);
+      host.appendChild(base);
       var glow = document.createElementNS(NS, 'path');
       glow.setAttribute('d', dAttr); glow.setAttribute('class', 'zp zp--glow');
       var pk = document.createElementNS(NS, 'path');
       pk.setAttribute('d', dAttr); pk.setAttribute('class', 'zp');
-      svg.appendChild(glow); svg.appendChild(pk);
+      host.appendChild(glow); host.appendChild(pk);
       var L = base.getTotalLength();
       stripes.push({ el: base, L: L, pts: null });
-      packets.push({ el: pk, glow: glow, L: L, dash: 70 + i * 10, speed: (opts.speed || 150) + i * 28, phase: i * 0.31 * L });
+      var bar = i >= offsets.length;
+      packets.push({ el: pk, glow: glow, L: L, dash: bar ? 40 : 70 + i * 10, speed: (opts.speed || 150) * (bar ? 0.5 : 1) + (bar ? 0 : i * 28), phase: i * 0.31 * L });
     });
 
     packets.forEach(function (p) {
@@ -164,9 +193,9 @@
         el.style.transition = 'opacity 0.6s';
       });
     });
-    if (reduced) { packets.forEach(function (p) { p.el.remove(); p.glow.remove(); }); return; }
+    if (reduced) { packets.forEach(function (p) { p.el.remove(); p.glow.remove(); }); return { replay: function () {} }; }
 
-    /* Draw-in, staggered, then packets appear. Runs once, when `trigger` fires. */
+    /* Draw-in, staggered, then packets appear. Runs once, when `trigger` fires, and again on replay(). */
     var drawn = false;
     function draw() {
       if (drawn) return; drawn = true;
@@ -179,6 +208,14 @@
       setTimeout(function () { packets.forEach(function (p) { p.el.style.opacity = ''; p.glow.style.opacity = ''; }); }, (opts.drawSeconds || 1.6) * 1000 + 300);
     }
     stripes.forEach(function (st) { st.el.style.strokeDasharray = st.L; st.el.style.strokeDashoffset = st.L; });
+    var api = {
+      // Used by the hero art switch: wipe the lines and draw them in again.
+      replay: function () {
+        packets.forEach(function (p) { p.el.style.opacity = '0'; p.glow.style.opacity = '0'; });
+        stripes.forEach(function (st) { st.el.style.transition = 'none'; st.el.style.strokeDashoffset = st.L; });
+        drawn = false; draw();
+      }
+    };
     if (opts.drawOnView && 'IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
         if (entries[0].isIntersecting) { draw(); io.disconnect(); }
@@ -197,7 +234,7 @@
     }));
 
     /* Optional: the stripe nearest the cursor turns red. */
-    if (!opts.hover) return;
+    if (!opts.hover) return api;
     function samples(st) {
       if (st.pts) return st.pts;
       var pts = [];
@@ -216,15 +253,118 @@
         });
       });
       if (best !== hot && best >= 0) {
-        stripes.forEach(function (st, i) { st.el.setAttribute('class', 'zl zl--' + (i === best ? 0 : i)); });
+        // The crossbar belongs to its source stripe, so it lights up with it.
+        var hotT = best === T_FROM || best >= offsets.length;
+        stripes.forEach(function (st, i) {
+          var on = i === best || (hotT && (i === T_FROM || i >= offsets.length));
+          st.el.setAttribute('class', 'zl zl--' + (on ? 0 : i));
+        });
         hot = best;
       }
     });
+    return api;
   }
 
-  (function heroZ() {
-    var svg = document.getElementById('zlines');
-    if (svg) buildZ(svg, { hover: document.getElementById('heroArt') });
+  /* ========================================================================
+     Hero, direction B: the logo's line bundle fans out into five routes, one per business, each
+     ending at a labelled node. Every route is a link to its business further down the page.
+     ===================================================================== */
+  function buildRoutes(svg) {
+    var NS = 'http://www.w3.org/2000/svg';
+    var LANES = [
+      ['Voice Termination', 'Wholesale voice on our LDI gateway', '#voice'],
+      ['Digital Mobile Services', 'SMS, WhatsApp, email and Zekli', '#dms'],
+      ['CLS', 'Cable landing station on the Pak-China fibre', '#cls'],
+      ['Sovereign Intelligence Stack', 'Cloud and data centre in Pakistan', '#stack'],
+      ['BPO Solutions', 'Operations run by a carrier team', '#bpo']
+    ];
+    var IN_Y = 320, IN_GAP = 18, X0 = 16, FAN0 = 110, FAN1 = 250, X1 = 612, TOP = 96, STEP = 112;
+    var lanes = [];
+    function setHot(k) { lanes.forEach(function (ln, i) { ln.g.classList.toggle('is-hot', i === k); }); }
+    LANES.forEach(function (txt, i) {
+      var yIn = IN_Y + (i - 2) * IN_GAP, yOut = TOP + i * STEP, mid = (FAN0 + FAN1) / 2;
+      var d = 'M' + X0 + ' ' + yIn + ' L' + FAN0 + ' ' + yIn +
+        ' C' + mid + ' ' + yIn + ' ' + mid + ' ' + yOut + ' ' + FAN1 + ' ' + yOut + ' L' + X1 + ' ' + yOut;
+      var g = document.createElementNS(NS, 'a');
+      g.setAttribute('href', txt[2]);
+      g.setAttribute('class', 'route' + (i === 2 ? ' is-hot' : ''));
+      g.setAttribute('aria-label', txt[0] + ': ' + txt[1]);
+      // The hit area covers the whole fanned lane, not just the thin line.
+      g.innerHTML = '<rect class="route__hit" x="' + FAN0 + '" y="' + (yOut - STEP / 2) + '" width="' + (X1 - FAN0 + 24) + '" height="' + STEP + '"/>' +
+        '<path class="route__line" d="' + d + '"/>' +
+        '<path class="zp zp--glow" d="' + d + '"/><path class="zp" d="' + d + '"/>' +
+        '<circle class="route__node" cx="' + X1 + '" cy="' + yOut + '" r="9"/>' +
+        '<text class="route__name" x="' + (FAN1 + 20) + '" y="' + (yOut - 22) + '">' + txt[0] + '</text>' +
+        '<text class="route__sub" x="' + (FAN1 + 20) + '" y="' + (yOut + 34) + '">' + txt[1] + '</text>';
+      svg.appendChild(g);
+      g.addEventListener('mouseenter', function () { setHot(i); });
+      g.addEventListener('focus', function () { setHot(i); });
+      var line = g.querySelector('.route__line'), L = line.getTotalLength();
+      lanes.push({ g: g, line: line, L: L, pk: [g.querySelectorAll('.zp')[0], g.querySelectorAll('.zp')[1]],
+        dash: 60, speed: 130 + i * 14, phase: i * 0.23 * L });
+    });
+    if (reduced) { lanes.forEach(function (ln) { ln.pk.forEach(function (el) { el.remove(); }); }); return { replay: function () {} }; }
+
+    lanes.forEach(function (ln) { ln.pk.forEach(function (el) { el.style.strokeDasharray = ln.dash + ' ' + ln.L; el.style.transition = 'opacity 0.6s'; }); });
+    var timer = 0;
+    function draw() {
+      svg.classList.remove('is-drawn');
+      lanes.forEach(function (ln) {
+        ln.pk.forEach(function (el) { el.style.opacity = '0'; });
+        ln.line.style.transition = 'none';
+        ln.line.style.strokeDasharray = ln.L; ln.line.style.strokeDashoffset = ln.L;
+      });
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        lanes.forEach(function (ln, i) {
+          ln.line.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(0.22,1,0.36,1) ' + (0.1 + i * 0.1) + 's, stroke 0.3s, opacity 0.3s';
+          ln.line.style.strokeDashoffset = 0;
+        });
+        svg.classList.add('is-drawn');
+      }); });
+      clearTimeout(timer);
+      timer = setTimeout(function () { lanes.forEach(function (ln) { ln.pk.forEach(function (el) { el.style.opacity = ''; }); }); }, 2000);
+    }
+    draw();
+
+    var t = 0;
+    gateLoop(svg, makeLoop(function (dt) {
+      t += dt / 1000;
+      lanes.forEach(function (ln) {
+        var off = -((t * ln.speed + ln.phase) % (ln.L + ln.dash));
+        ln.pk.forEach(function (el) { el.style.strokeDashoffset = off; });
+      });
+    }));
+    return { replay: draw };
+  }
+
+  /* Hero art: the Z and the five routes are both built; the switch under the art shows one.
+     ?hero=routes opens on the routes, and the switch keeps the URL in step so it can be shared. */
+  (function heroArt() {
+    var art = document.getElementById('heroArt');
+    var zsvg = document.getElementById('zlines'), rsvg = document.getElementById('routes');
+    if (!art || !zsvg || !rsvg) return;
+    var views = {
+      z: buildZ(zsvg, { hover: art }),
+      routes: buildRoutes(rsvg)
+    };
+    var btns = Array.prototype.slice.call(document.querySelectorAll('[data-hero-set]'));
+    function current() { return root.getAttribute('data-hero') === 'routes' ? 'routes' : 'z'; }
+    function sync() { btns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-hero-set') === current() ? 'true' : 'false'); }); }
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var next = b.getAttribute('data-hero-set');
+        if (next === current()) return;
+        if (next === 'routes') root.setAttribute('data-hero', 'routes'); else root.removeAttribute('data-hero');
+        sync();
+        views[next].replay();
+        try {
+          var url = new URL(location.href);
+          if (next === 'routes') url.searchParams.set('hero', 'routes'); else url.searchParams.delete('hero');
+          history.replaceState(null, '', url);
+        } catch (e) {}
+      });
+    });
+    sync();
   })();
 
   (function solutionsZ() {

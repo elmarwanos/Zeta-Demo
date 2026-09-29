@@ -20,6 +20,8 @@
       var q = new URLSearchParams(location.search).get('theme');
       var t = (q === 'dark' || q === 'light') ? q : localStorage.getItem('zeta-theme');
       if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      // Hero art: ?hero=routes opens on the five routes instead of the Z
+      if (new URLSearchParams(location.search).get('hero') === 'routes') document.documentElement.setAttribute('data-hero', 'routes');
     } catch (e) {}
   })();
 </script>
@@ -82,10 +84,13 @@
       </div>
     </div>
 
-    <div class="hero__art" id="heroArt" aria-hidden="true">
-      <!-- The Z mark drawn as concentric route lines. Paths are generated in main.js
-           (offsetting one Z polyline), drawn in on load, then carry travelling packets. -->
-      <svg class="zlines" id="zlines" viewBox="0 0 640 640" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="hero__art" id="heroArt">
+      <!-- Two hero directions, one shown at a time (switch at the top right of the hero, or ?hero=routes).
+           A: the Z mark drawn as concentric route lines, with the logo's "t".
+           B: one bundle of lines fanning out into five routes, one per business, each a link.
+           Paths for both are generated in main.js. -->
+      <svg class="zlines" id="zlines" viewBox="0 0 640 640" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      <svg class="routes" id="routes" viewBox="0 0 640 640" preserveAspectRatio="xMidYMid meet" role="group" aria-label="Zeta's five businesses"></svg>
     </div>
   </div>
 
@@ -96,6 +101,14 @@
       <div class="stat"><dt>PTA licences</dt><dd><span data-count="2" data-suffix="">2</span><small>LDI and CVAS</small></dd></div>
       <div class="stat"><dt>Terrestrial cable landing station</dt><dd><span class="stat__word">First</span><small>in Pakistan</small></dd></div>
     </dl>
+  </div>
+
+  <!-- Switch between the two hero directions, pinned to the top right of the section. -->
+  <div class="container hero__bar">
+    <div class="art-switch" role="group" aria-label="Hero artwork">
+      <button type="button" data-hero-set="z" aria-pressed="true">Z mark</button>
+      <button type="button" data-hero-set="routes" aria-pressed="false">Five businesses</button>
+    </div>
   </div>
 </header>
 
@@ -122,12 +135,12 @@
   <div class="zbg-wrap" aria-hidden="true"><svg class="zbg" id="zbg" viewBox="0 0 640 640" preserveAspectRatio="none"></svg></div>
   <div class="container">
     <div class="section__head">
-      <h2 class="h2">Six businesses.<br>One operator.</h2>
+      <h2 class="h2">Five businesses.<br>One operator.</h2>
       <p class="section__intro">Everything below runs on Zeta's own licences, fibre and facilities in Pakistan. No resold routes, no rented racks.</p>
     </div>
 
     <div class="pillars" id="pillars">
-      <a class="pillar" href="#contact">
+      <a class="pillar" id="voice" href="#contact">
         <div class="pillar__tile"><svg class="pillar__icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 12h20a8 8 0 0 1 0 16H14l-6 8V12z"/><path d="M28 20h8a6 6 0 0 1 0 12h-2l4 6"/></svg></div>
         <div class="pillar__body">
           <h3>Voice Termination</h3>
@@ -137,23 +150,23 @@
         </div>
       </a>
 
-      <a class="pillar" href="#contact">
+      <a class="pillar" id="dms" href="#zekli">
         <div class="pillar__tile"><svg class="pillar__icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="10" width="32" height="24" rx="3"/><path d="M8 14l16 11 16-11"/><path d="M14 40h20"/></svg></div>
         <div class="pillar__body">
           <h3>Digital Mobile Services</h3>
           <p>Enterprise messaging and identity for banks, aggregators and government, delivered on direct operator connections.</p>
-          <ul class="pillar__tags"><li>A2P and enterprise SMS</li><li>WhatsApp Business API</li><li>Voice and CPaaS automation</li><li>Identity and authentication</li></ul>
+          <ul class="pillar__tags"><li>A2P and enterprise SMS</li><li>WhatsApp Business API</li><li>Voice and CPaaS automation</li><li>Identity and authentication</li><li>Enterprise email solutions and marketing</li></ul>
           <span class="pillar__link">Digital Mobile Services</span>
         </div>
       </a>
 
-      <a class="pillar" href="#backbone">
+      <a class="pillar" id="cls" href="#backbone">
         <div class="pillar__tile"><svg class="pillar__icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M4 30c8-10 14-10 20 0s12 10 20 0"/><path d="M4 20c8-10 14-10 20 0s12 10 20 0"/><circle cx="24" cy="25" r="3"/></svg></div>
         <div class="pillar__body">
-          <h3>SCL</h3>
+          <h3>CLS</h3>
           <p>Carrier connectivity through Pakistan's first terrestrial cable landing station. Land-based capacity on the Pak-China fibre, plus subsea wholesale.</p>
           <ul class="pillar__tags"><li>Terrestrial transit and IP capacity</li><li>Subsea wholesale bandwidth</li><li>IPLC and MPLS</li><li>Cloud connect</li><li>DDoS protection</li></ul>
-          <span class="pillar__link">SCL connectivity</span>
+          <span class="pillar__link">Cable Landing Station</span>
         </div>
       </a>
 
@@ -174,16 +187,6 @@
           <p>Network operations, IT deployment, finance and people operations, run by a team that already runs a carrier.</p>
           <ul class="pillar__tags"><li>NOC and network optimisation</li><li>IT infrastructure deployment</li><li>Core finance</li><li>Supply chain</li><li>People operations</li></ul>
           <span class="pillar__link">BPO Solutions</span>
-        </div>
-      </a>
-
-      <a class="pillar" href="#zekli">
-        <div class="pillar__tile"><svg class="pillar__icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="6"/><path d="M24 6v8M24 34v8M6 24h8M34 24h8"/><path d="M11.3 11.3l5.7 5.7M31 31l5.7 5.7M36.7 11.3L31 17M17 31l-5.7 5.7"/></svg></div>
-        <div class="pillar__body">
-          <h3>Zekli</h3>
-          <p>Zeta's CPaaS platform for businesses. SMS, WhatsApp, voice and email from one console, on Zeta's own operator connections.</p>
-          <ul class="pillar__tags"><li>SMS</li><li>WhatsApp for Business</li><li>Robo and IVR calls</li><li>Email</li></ul>
-          <span class="pillar__link">Zekli</span>
         </div>
       </a>
     </div>
@@ -321,7 +324,7 @@
 <section id="zekli" class="section section--zekli">
   <div class="container zekli">
     <div class="zekli__copy">
-      <p class="zekli__name">Zekli</p>
+      <p class="zekli__name">Zekli, part of Digital Mobile Services</p>
       <h2 class="h2">Every customer conversation, one platform.</h2>
       <p>Zekli is Zeta's CPaaS platform for businesses. SMS, WhatsApp, voice and email from a single console, sent over Zeta's own operator connections rather than a third-party aggregator.</p>
       <a href="https://zekli.com" class="btn btn--outline" rel="noopener">Visit zekli.com</a>
@@ -452,7 +455,7 @@
       <label>Work email<input type="email" name="email" autocomplete="email"></label>
       <label>I am interested in
         <select name="topic">
-          <option>Voice Termination</option><option>Digital Mobile Services</option><option>SCL connectivity</option><option>Sovereign Intelligence Stack</option><option>BPO Solutions</option><option>Zekli</option><option>Something else</option>
+          <option>Voice Termination</option><option>Digital Mobile Services</option><option>Cable Landing Station</option><option>Sovereign Intelligence Stack</option><option>BPO Solutions</option><option>Something else</option>
         </select>
       </label>
       <label class="form__full">Message<textarea name="message" rows="4"></textarea></label>
@@ -470,7 +473,7 @@
     </div>
     <div class="footer__col">
       <h4>Solutions</h4>
-      <a href="#solutions">Voice Termination</a><a href="#solutions">Digital Mobile Services</a><a href="#solutions">SCL</a><a href="#stack">Sovereign Intelligence Stack</a><a href="#bpo">BPO Solutions</a><a href="#zekli">Zekli</a>
+      <a href="#solutions">Voice Termination</a><a href="#solutions">Digital Mobile Services</a><a href="#solutions">CLS</a><a href="#stack">Sovereign Intelligence Stack</a><a href="#bpo">BPO Solutions</a>
     </div>
     <div class="footer__col">
       <h4>Company</h4>
